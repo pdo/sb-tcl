@@ -1,5 +1,5 @@
 ;;;
-;;; Copyright (c) 2016 Paul Onions
+;;; Copyright (c) 2016 - 2018 Paul Onions
 ;;; Licence: MIT, see LICENCE file for details
 ;;;
 ;;; SBCL<->Tcl interface.
@@ -22,7 +22,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tcl library
 
-(defvar *libtcl-location* "/usr/local/lib/libtcl8.6.dylib")
+(defvar *libtcl-location* "/usr/lib64/libtcl8.6.so")
 
 (defvar *libtcl* nil)
 
@@ -39,7 +39,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tk library
 
-(defvar *libtk-location* "/usr/local/lib/libtk8.6.dylib")
+(defvar *libtk-location* "/usr/lib64/libtk8.6.so")
 
 (defvar *libtk* nil)
 
@@ -221,24 +221,29 @@ a status code."
        :do (tcl-list-obj-append-element *tcl-interpreter* foreign-obj (to-tcl obj)))
     (tcl-eval-obj-ex *tcl-interpreter* foreign-obj 0)))
 
-(defmacro define-tcl-command (name lambda-list result-type &body body)
-  "Define a Tcl command, callable from Lisp.
+(defmacro define-tcl-callout (name lambda-list result-type &body body)
+  "Define a Lisp function that calls a Tcl command.
 
-Wrap BODY in a function definition based on NAME and LAMBDA-LIST,
-returning a result of type RESULT-TYPE if possible.  The last form in
+Construct a Tcl command line and invoke it.
+
+The Tcl command line is constructed in Lisp by wrapping BODY in a
+function definition based on NAME and LAMBDA-LIST, the last form in
 the body is expected to evaluate to a list of objects which will be
 given to TCL-COMMAND-CALL to make the call into Tcl.
 
-May signal a TCL-COMMAND-ERROR, TCL-COMMAND-RETURN, TCL-COMMAND-BREAK
-or TCL-COMMAND-CONTINUE condition if the command does not complete
-with a +TCL-OK+ return code."
+The result of the Tcl evaluation will be returned as type RESULT-TYPE
+if possible, otherwise TCL-RESULT-ERROR condition will be signalled.
+
+May also signal a TCL-COMMAND-ERROR, TCL-COMMAND-RETURN,
+TCL-COMMAND-BREAK or TCL-COMMAND-CONTINUE condition if the command
+does not complete with a +TCL-OK+ return code."
   (let ((!args (gensym "ARGS"))
         (!stat (gensym "STAT")))
     `(defun ,name ,lambda-list
        (let* ((,!args (progn ,@body))
               (,!stat (apply #'tcl-command-call ,!args)))
          (ecase ,!stat
-           ((,+tcl-ok+)       ,(and result-type `(get-tcl-result-as ,result-type)))
+           ((,+tcl-ok+)       ,(and result-type `(get-tcl-result-as ',result-type)))
            ((,+tcl-error+)    (error  'tcl-command-error :msg (get-tcl-result-as 'string)))
            ((,+tcl-return+)   (signal 'tcl-command-return))
            ((,+tcl-break+)    (signal 'tcl-command-break))
@@ -256,7 +261,7 @@ with a +TCL-OK+ return code."
 (defmacro define-tcl-callback (name lambda-list &body body)
   "Define a Lisp function callable from Tcl.
 
-Wrap BODY in a foreign callback based on NAME and LAMBDA-LIST, where
+Wrap BODY in a function based on NAME and LAMBDA-LIST, where
 LAMBDA-LIST is a list of (NAME TYPE) pairs, so that BODY is evaluated
 in a context where each NAME is bound to the result of applying
 FROM-TCL-AS to TYPE and the tcl object supplied by Tcl.
@@ -291,7 +296,7 @@ status code.  If it is omitted, or nil, then +TCL-OK+ is assumed."
               (let (,@(loop
                          :for (name type) :in lambda-list
                          :for idx :from 1
-                         :collect `(,name (from-tcl-as ,type (deref (deref ,!objv) ,idx)))))
+                         :collect `(,name (from-tcl-as ',type (deref (deref ,!objv) ,idx)))))
                 ,@body)))
          (when ,!rslt
            (%set-obj-result *tcl-interpreter* (to-tcl ,!rslt)))

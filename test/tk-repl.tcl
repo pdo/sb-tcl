@@ -1,5 +1,5 @@
 ##
-## Copyright (c) 2016 Paul Onions
+## Copyright (c) 2016 - 2018 Paul Onions
 ## Licence: MIT, see LICENCE file for details
 ##
 ## A Tcl REPL for testing purposes.

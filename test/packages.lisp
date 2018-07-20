@@ -1,5 +1,5 @@
 ;;;
-;;; Copyright (c) 2016 Paul Onions
+;;; Copyright (c) 2016 - 2018 Paul Onions
 ;;; Licence: MIT, see LICENCE file for details
 ;;;
 ;;; Test package definition for the SB-TCL system.

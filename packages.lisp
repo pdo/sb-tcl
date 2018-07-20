@@ -1,5 +1,5 @@
 ;;;
-;;; Copyright (c) 2016 Paul Onions
+;;; Copyright (c) 2016 - 2018 Paul Onions
 ;;; Licence: MIT, see LICENCE file for details
 ;;;
 ;;; Package definition for the SB-TCL system.
@@ -48,5 +48,5 @@
    #:initialize-tcl #:initialize-tk #:enter-tk-main-loop
    #:to-tcl #:from-tcl-as
    #:interpret-tcl #:get-tcl-result-as
-   #:tcl-command-call #:define-tcl-command
+   #:tcl-command-call #:define-tcl-callout
    #:define-tcl-callback #:register-tcl-callback))

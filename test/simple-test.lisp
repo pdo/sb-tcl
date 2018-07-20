@@ -1,16 +1,16 @@
 ;;;
-;;; Copyright (c) 2016 Paul Onions
+;;; Copyright (c) 2016 - 2018 Paul Onions
 ;;; Licence: MIT, see LICENCE file for details
 ;;;
 ;;; Some simple tests/examples of SB-TCL usage.
 ;;;
 (in-package :sb-tcl-test)
 
-(define-tcl-command tcl-version () 'string
+(define-tcl-callout tcl-version () string
   "Return the Tcl version string."
   '("set" "tcl_version"))
 
-(define-tcl-callback hello ((name 'string))
+(define-tcl-callback hello ((name string))
   (format nil "Hello, ~A!" name))
 
 (defun tcl-test (&optional (name "world"))
