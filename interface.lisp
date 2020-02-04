@@ -1,5 +1,5 @@
 ;;;
-;;; Copyright (c) 2016 - 2018 Paul Onions
+;;; Copyright (c) 2016 - 2020 Paul Onions
 ;;; Licence: MIT, see LICENCE file for details
 ;;;
 ;;; SBCL<->Tcl interface.
@@ -22,7 +22,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tcl library
 
-(defvar *libtcl-location* "/usr/lib64/libtcl8.6.so")
+(defvar *libtcl-location* "/usr/local/lib/libtcl86.so")
 
 (defvar *libtcl* nil)
 
@@ -39,7 +39,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tk library
 
-(defvar *libtk-location* "/usr/lib64/libtk8.6.so")
+(defvar *libtk-location* "/usr/local/lib/libtk86.so")
 
 (defvar *libtk* nil)
 
@@ -59,7 +59,6 @@
 
 (defun start-tcl-interpreter (&key with-tk no-bind)
   "Return a newly created Tcl interpreter.
-
 Also bind it to *TCL-INTERPRETER* if NO-BIND is NIL."
   (unless *libtcl*
     (open-libtcl))
@@ -130,37 +129,91 @@ Also bind it to *TCL-INTERPRETER* if NO-BIND is NIL."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tcl->Lisp conversions
 
-(defgeneric from-tcl-as (type tcl-obj)
-  (:documentation "Convert TCL-OBJ to a normal Lisp object."))
+(defgeneric from-tcl-as (type tcl-obj &rest parameters)
+  (:documentation "Convert TCL-OBJ to a normal Lisp object of type TYPE."))
 
-(defmethod from-tcl-as ((type (eql 'string)) tcl-obj)
-  "Get the string representation of a Tcl object.
-
-Return a Lisp string."
+(defmethod from-tcl-as ((type (eql 'string)) tcl-obj &rest parameters)
+  "Get the string representation of a Tcl object."
+  (declare (ignore parameters))
   (tcl-get-string-from-obj tcl-obj))
 
-(defmethod from-tcl-as ((type (eql 'integer)) tcl-obj)
+(defmethod from-tcl-as ((type (eql 'integer)) tcl-obj &rest parameters)
   "Get the integer representation of a Tcl object.
 
 Return a Lisp integer.  Currently, if the Tcl result cannot be
 obtained in long-integer form then signal an error of type
 TCL-CONVERSION-ERROR."
+  (declare (ignore parameters))
   (multiple-value-bind (stat val) (tcl-get-long-from-obj *tcl-interpreter* tcl-obj)
     (unless (eql stat +tcl-ok+)
       (error 'tcl-conversion-error 
              :msg (get-tcl-result-as 'string)))
     val))
 
-(defmethod from-tcl-as ((type (eql 'double-float)) tcl-obj)
+(defmethod from-tcl-as ((type (eql 'double-float)) tcl-obj &rest parameters)
   "Get the double-float representation of a Tcl object.
 
 Return a Lisp double-float.  If the Tcl result cannot be obtained in
 double-float form then signal an error of type TCL-CONVERSION-ERROR."
+  (declare (ignore parameters))
   (multiple-value-bind (stat val) (tcl-get-double-from-obj *tcl-interpreter* tcl-obj)
     (unless (eql stat +tcl-ok+)
       (error 'tcl-conversion-error 
              :msg (get-tcl-result-as 'string)))
     val))
+
+(defmethod from-tcl-as ((type list) tcl-obj &rest parameters)
+  "Get the given representation of a Tcl object.
+
+Where TYPE is a list-based type-desciptor."
+  (declare (ignore parameters))
+  (let ((constructor (first type))
+        (type-params (rest type)))
+    (funcall #'from-tcl-as constructor tcl-obj type-params)))
+
+(defmethod from-tcl-as ((constructor (eql 'list)) tcl-obj &rest parameters)
+  "Get the given representation of a Tcl object.
+
+Return a list of things, each of a type that is described by the first
+element of PARAMETERS (a type descriptor)."
+  (multiple-value-bind (stat len)
+      (tcl-list-obj-length *tcl-interpreter* tcl-obj)
+    (unless (eql stat +tcl-ok+)
+      (error 'tcl-conversion-error 
+             :msg (get-tcl-result-as 'string)))
+    (loop
+       :for n :from 0 :below len
+       :collect (with-alien ((elem tcl-obj-ptr))
+                  (let ((stat (tcl-list-obj-index *tcl-interpreter*
+                                                  tcl-obj n (addr elem))))
+                    (unless (eql stat +tcl-ok+)
+                      (error 'tcl-conversion-error 
+                             :msg (get-tcl-result-as 'string)))
+                    (from-tcl-as (first parameters) elem))))))
+
+(defmethod from-tcl-as ((constructor (eql 'vector)) tcl-obj &rest parameters)
+  "Get the given representation of a Tcl object.
+
+Return a vector of things, each of a type that is described by the
+first element of PARAMETERS (a type descriptor)."
+  (multiple-value-bind (stat len)
+      (tcl-list-obj-length *tcl-interpreter* tcl-obj)
+    (unless (eql stat +tcl-ok+)
+      (error 'tcl-conversion-error 
+             :msg (get-tcl-result-as 'string)))
+    (let ((vec (make-array len :initial-element nil)))
+      (loop
+         :for n :from 0 :below len
+         :do 
+           (with-alien ((elem (* tcl-obj-ptr)))
+             (let ((stat (tcl-list-obj-index *tcl-interpreter*
+                                             tcl-obj n elem)))
+               (unless (eql stat +tcl-ok+)
+                 (error 'tcl-conversion-error 
+                        :msg (get-tcl-result-as 'string)))
+               (setf (aref vec n)
+                     (from-tcl-as (first parameters) elem)))))
+      vec)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interpreter invocation
@@ -172,45 +225,23 @@ double-float form then signal an error of type TCL-CONVERSION-ERROR."
 (defmethod interpret-tcl ((script string) &key)
   (tcl-eval-ex *tcl-interpreter* script -1 0))
 
-(defgeneric get-tcl-result-as (type &key &allow-other-keys)
-  (:documentation "Get the Tcl interpreter result, of the specified type, if possible."))
+(defun get-tcl-result-as (type)
+  "Get the desired representation of the Tcl interpreter result.
 
-(defmethod get-tcl-result-as ((type (eql 'string)) &key)
-  "Get the string representation of the Tcl interpreter result.
-
-Return a Lisp string."
-  (tcl-get-string-result *tcl-interpreter*))
-
-(defmethod get-tcl-result-as ((type (eql 'integer)) &key)
-  "Get the integer representation of the Tcl interpreter result.
-
-Return a Lisp integer.  Currently, if the Tcl result cannot be
-obtained in long-integer form then signal an error of type
-TCL-RESULT-ERROR."
-  (let ((foreign-obj (tcl-get-obj-result *tcl-interpreter*)))
-    (multiple-value-bind (stat val) (tcl-get-long-from-obj *tcl-interpreter* foreign-obj)
-      (unless (eql stat +tcl-ok+)
-        (error 'tcl-result-error 
-               :msg (get-tcl-result-as 'string)))
-      val)))
-
-(defmethod get-tcl-result-as ((type (eql 'double-float)) &key)
-  "Get the double-float representation of the Tcl interpreter result.
-
-Return a Lisp double-float.  If the Tcl result cannot be obtained in
-double-float form then signal an error of type TCL-RESULT-ERROR."
-  (let ((foreign-obj (tcl-get-obj-result *tcl-interpreter*)))
-    (multiple-value-bind (stat val) (tcl-get-double-from-obj *tcl-interpreter* foreign-obj)
-      (unless (eql stat +tcl-ok+)
-        (error 'tcl-result-error 
-               :msg (get-tcl-result-as 'string)))
-      val)))
+If the Tcl result cannot be obtained in TYPE form then signal an error
+of type TCL-RESULT-ERROR."
+  (let ((tcl-obj (tcl-get-obj-result *tcl-interpreter*)))
+    (handler-case
+        (from-tcl-as type tcl-obj)
+      (tcl-conversion-error (condition)
+        (error 'tcl-result-error
+               :msg (message condition))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Commands
+;; Tcl Callouts
 
 (defun tcl-command-call (&rest objs)
-  "Construct and call a Tcl command.
+  "Construct a Tcl command line and invoke it.
 
 Collect the results of passing each object from OBJS through TO-TCL to
 form a Tcl list object.  Then invoke the interpreter on it, returning
@@ -222,9 +253,7 @@ a status code."
     (tcl-eval-obj-ex *tcl-interpreter* foreign-obj 0)))
 
 (defmacro define-tcl-callout (name lambda-list result-type &body body)
-  "Define a Lisp function that calls a Tcl command.
-
-Construct a Tcl command line and invoke it.
+  "Define a Lisp function that constructs a Tcl command line and invokes it.
 
 The Tcl command line is constructed in Lisp by wrapping BODY in a
 function definition based on NAME and LAMBDA-LIST, the last form in
@@ -250,7 +279,7 @@ does not complete with a +TCL-OK+ return code."
            ((,+tcl-continue+) (signal 'tcl-command-continue)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Callbacks
+;;; Tcl Commands
 
 (defun %wrong-num-args (interp objv cmsg)
   (tcl-wrong-num-args interp 1 objv cmsg))
@@ -258,7 +287,7 @@ does not complete with a +TCL-OK+ return code."
 (defun %set-obj-result (interp rslt)
   (tcl-set-obj-result interp rslt))
 
-(defmacro define-tcl-callback (name lambda-list &body body)
+(defmacro define-tcl-command (name lambda-list &body body)
   "Define a Lisp function callable from Tcl.
 
 Wrap BODY in a function based on NAME and LAMBDA-LIST, where
@@ -282,10 +311,10 @@ status code.  If it is omitted, or nil, then +TCL-OK+ is assumed."
         (!rslt (gensym "RSLT"))
         (!stat (gensym "STAT")))
     `(define-alien-callback ,name int
-       ((,!client-data data-ptr)
-        (,!interp interp-ptr)
+       ((,!client-data tcl-data-ptr)
+        (,!interp tcl-interp-ptr)
         (,!objc int)
-        (,!objv (* (array obj-ptr nil))))
+        (,!objv (* (array tcl-obj-ptr nil))))
        ;;(declare (ignore ,!client-data))
        (multiple-value-bind (,!rslt ,!stat)
            (cond
@@ -302,21 +331,21 @@ status code.  If it is omitted, or nil, then +TCL-OK+ is assumed."
            (%set-obj-result *tcl-interpreter* (to-tcl ,!rslt)))
          (or ,!stat +tcl-ok+)))))
 
-(define-alien-callback tcl-delete-command void ((client-data data-ptr))
+(define-alien-callback tcl-delete-command void ((client-data tcl-data-ptr))
   ;;(declare (ignore client-data))
   nil)
 
-(defun register-tcl-callback (callback &optional name)
-  "Register CALLBACK with *TCL-INTERPRETER*.
+(defun register-tcl-command (command &optional name)
+  "Register COMMAND with *TCL-INTERPRETER*.
 
-The CALLBACK argument should be a symbol that has previously been
-bound to a callback function by a DEFINE-TCL-CALLBACK form.  The
-callback function will become accessible in the Tcl interpreter as
-NAME, defaulting to a downcased version of the Lisp symbol name if
-omitted."
-  (let ((str (or name (string-downcase (string callback)))))
+The COMMAND argument should be a symbol that has previously been bound
+to a command callback function by a DEFINE-TCL-COMMAND form.  The
+callback function will become accessible in the Tcl interpreter as a
+command called NAME, defaulting to a downcased version of the Lisp
+symbol name if omitted."
+  (let ((str (or name (string-downcase (string command)))))
     (tcl-create-obj-command *tcl-interpreter*
                             str
-                            (symbol-value callback)
+                            (symbol-value command)
                             nil
                             tcl-delete-command)))

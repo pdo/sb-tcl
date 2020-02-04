@@ -1,5 +1,5 @@
 ;;;
-;;; Copyright (c) 2016 - 2018 Paul Onions
+;;; Copyright (c) 2016 - 2020 Paul Onions
 ;;; Licence: MIT, see LICENCE file for details
 ;;;
 ;;; Package definition for the SB-TCL system.
@@ -13,14 +13,17 @@
    #:struct #:void #:int #:long #:double #:c-string)
   (:export
    ;; aliens.lisp
-   #:interp-ptr #:obj-ptr #:command-ptr #:data-ptr
+   #:tcl-interp-ptr #:tcl-obj-ptr
+   #:tcl-command-ptr #:tcl-data-ptr
    #:tcl-find-executable
    #:tcl-create-interp #:tcl-delete-interp
    #:tcl-init #:tcl-eval-ex #:tcl-eval-obj-ex
    #:tcl-get-string-result #:tcl-get-obj-result
    #:tcl-new-obj #:tcl-new-string-obj
    #:tcl-new-long-obj #:tcl-new-double-obj
+   #:tcl-new-list-obj
    #:tcl-list-obj-append-element
+   #:tcl-list-obj-index #:tcl-list-obj-length
    #:tcl-get-string-from-obj #:tcl-get-long-from-obj
    #:tcl-get-double-from-obj
    #:tcl-db-incr-ref-count #:tcl-db-decr-ref-count
@@ -32,7 +35,8 @@
   (:use :common-lisp :sb-tcl-alien)
   (:import-from :sb-alien
    #:load-shared-object #:unload-shared-object
-   #:define-alien-callback #:int #:void #:deref)
+   #:with-alien #:define-alien-callback
+   #:int #:void #:deref #:addr)
   (:export
    ;; conditions.lisp
    #:tcl-condition #:tcl-error #:tcl-result-error #:tcl-conversion-error
@@ -49,4 +53,4 @@
    #:to-tcl #:from-tcl-as
    #:interpret-tcl #:get-tcl-result-as
    #:tcl-command-call #:define-tcl-callout
-   #:define-tcl-callback #:register-tcl-callback))
+   #:define-tcl-command #:register-tcl-command))
