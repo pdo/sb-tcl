@@ -22,7 +22,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tcl library
 
-(defvar *libtcl-location* "/usr/local/lib/libtcl86.so")
+(defvar *libtcl-location*
+  #+LINUX      "/usr/lib/libtcl86.so"
+  #+DARWIN     "/opt/local/libtcl86.dylib"
+  #+FREEBSD    "/usr/local/lib/libtcl86.so"
+  #+OS-WINDOWS "libtcl.dll")
 
 (defvar *libtcl* nil)
 
@@ -39,7 +43,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tk library
 
-(defvar *libtk-location* "/usr/local/lib/libtk86.so")
+(defvar *libtk-location*
+  #+LINUX      "/usr/lib/libtk86.so"
+  #+DARWIN     "/opt/local/libtk86.dylib"
+  #+FREEBSD    "/usr/local/lib/libtk86.so"
+  #+OS-WINDOWS "libtk.dll")
 
 (defvar *libtk* nil)
 
@@ -54,12 +62,27 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tcl interpreter
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun read-tcl-script (filespec)
+    (with-open-file (strm filespec)
+      (let* ((buffer (make-array (file-length strm)
+                                 :element-type (stream-element-type strm)
+                                 :fill-pointer t))
+             (position (read-sequence buffer strm)))
+        (setf (fill-pointer buffer) position)
+        buffer))))
+
+(defvar *tcl-preamble*
+  #.(read-tcl-script (merge-pathnames "tcl-preamble.tcl" *compile-file-truename*))
+  "Tcl script to execute when interpreter is started.")
+
 (defvar *tcl-interpreter* nil
   "The default current Tcl interpreter.")
 
-(defun start-tcl-interpreter (&key with-tk no-bind)
+(defun start-tcl-interpreter (&key with-tk no-bind no-preamble)
   "Return a newly created Tcl interpreter.
-Also bind it to *TCL-INTERPRETER* if NO-BIND is NIL."
+Also bind it to *TCL-INTERPRETER* if NO-BIND is NIL, and source
+tcl-preamble.tcl if NO-PREAMBLE is NIL."
   (unless *libtcl*
     (open-libtcl))
   (let ((interp (tcl-create-interp)))
@@ -70,6 +93,8 @@ Also bind it to *TCL-INTERPRETER* if NO-BIND is NIL."
       (initialize-tk interp))
     (unless no-bind
       (setf *tcl-interpreter* interp))
+    (unless no-preamble
+      (interpret-tcl *tcl-preamble*))
     interp))
 
 (defun initialize-tcl (&optional (interp *tcl-interpreter*))
@@ -125,6 +150,24 @@ Also bind it to *TCL-INTERPRETER* if NO-BIND is NIL."
 (defmethod to-tcl ((obj double-float))
   "Return a newly constructed Tcl double-float foreign object"
   (tcl-new-double-obj obj))
+
+(defmethod to-tcl ((obj list))
+  "Return a newly constructed Tcl list foreign object"
+  (let ((tcl-list (tcl-new-list-obj 0 nil)))
+    (loop
+       :for elem :in obj
+       :do (tcl-list-obj-append-element
+            *tcl-interpreter* tcl-list (to-tcl elem)))
+    tcl-list))
+
+(defmethod to-tcl ((obj vector))
+  "Return a newly constructed Tcl list foreign object"
+  (let ((tcl-list (tcl-new-list-obj 0 nil)))
+    (loop
+       :for elem :across obj
+       :do (tcl-list-obj-append-element
+            *tcl-interpreter* tcl-list (to-tcl elem)))
+    tcl-list))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tcl->Lisp conversions
@@ -315,7 +358,7 @@ status code.  If it is omitted, or nil, then +TCL-OK+ is assumed."
         (,!interp tcl-interp-ptr)
         (,!objc int)
         (,!objv (* (array tcl-obj-ptr nil))))
-       ;;(declare (ignore ,!client-data))
+       (declare (ignore ,!client-data))
        (multiple-value-bind (,!rslt ,!stat)
            (cond
              ((/= ,!objc ,(1+ arity))
@@ -332,7 +375,7 @@ status code.  If it is omitted, or nil, then +TCL-OK+ is assumed."
          (or ,!stat +tcl-ok+)))))
 
 (define-alien-callback tcl-delete-command void ((client-data tcl-data-ptr))
-  ;;(declare (ignore client-data))
+  (declare (ignore client-data))
   nil)
 
 (defun register-tcl-command (command &optional name)

@@ -47,6 +47,7 @@
    #:*libtk-location* #:*libtk*
    #:open-libtcl #:close-libtcl
    #:open-libtk #:close-libtk
+   #:read-tcl-script #:*tcl-preamble*
    #:tcl-interpreter #:*tcl-interpreter*
    #:start-tcl-interpreter #:stop-tcl-interpreter
    #:initialize-tcl #:initialize-tk #:enter-tk-main-loop
