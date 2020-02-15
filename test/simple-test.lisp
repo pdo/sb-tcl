@@ -6,33 +6,26 @@
 ;;;
 (in-package :sb-tcl-test)
 
-(define-tcl-callout tclver () string
-  "Return the Tcl version string."
-  '("set" "tcl_version"))
+(define-tcl-callout start-repl-server (&optional (port 0)) integer
+  (list "::sb-tcl::start_repl_server" port))
 
-(define-tcl-callout listme () (list integer)
-  "Test parsing of list return type."
-  '("list" "1" "2" "3"))
+(define-tcl-command my_pow ((b integer) (e integer))
+  (expt b e))
 
-(define-tcl-command hello ((name string))
-  (format nil "Hello, ~A!" name))
+(define-tcl-callout powers-of-2 (exponents) (list integer)
+  (list "lmap" "n" exponents "my_pow 2 $n"))
 
-(defun tcl-test (&optional (name "world"))
+(defun tcl-test ()
   (start-tcl-interpreter)
-  (format t "Tcl callout test: ")
+  (format t "Tcl version: ")
   (force-output)
-  (format t "Tcl version is ~A~%" (tclver))
+  (interpret-tcl "set tcl_version")
+  (format t "~S~%" (get-tcl-result-as 'string))
   (force-output)
-  (format t "Tcl callout test: ")
+  (register-tcl-command 'my_pow)
+  (format t "Powers of 2: ")
   (force-output)
-  (format t "Returned list is ~S~%" (listme))
-  (force-output)
-  (format t "Tcl command test: ")
-  (force-output)
-  (register-tcl-command 'hello)
-  (let ((script (format nil "hello ~A" name)))
-    (interpret-tcl script)
-    (format t "~A~%" (get-tcl-result-as 'string)))
+  (format t "~S~%" (powers-of-2 '(1 2 3 4)))
   (force-output)
   (stop-tcl-interpreter))
 
@@ -41,6 +34,8 @@
 
 (defun tk-test ()
   (start-tcl-interpreter :with-tk t)
+  (format t "Tcl REPL server on port ~A~%" (start-repl-server))
+  (force-output)
   (interpret-tcl (format nil "source ~A" *tk-repl-script*))
   (interpret-tcl "openReplWindow {}")
   (enter-tk-main-loop)
