@@ -75,8 +75,8 @@ namespace eval ::sb-tcl:: {
         chan event $sock readable [list [namespace current]::repl_handler $sock repl${n}_cmd repl${n}_done]
     }
 
-    proc start_repl_server {} {
-        variable repl_server [socket -server ::sb-tcl::start_repl 0]
+    proc start_repl_server {{port 0}} {
+        variable repl_server [socket -server ::sb-tcl::start_repl $port]
         set portnum [lindex [chan configure $repl_server -sockname] 2]
         return $portnum
     }
