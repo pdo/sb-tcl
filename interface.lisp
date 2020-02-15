@@ -25,7 +25,7 @@
 (defvar *libtcl-location*
   #+LINUX      "/usr/lib/libtcl8.6.so"
   #+FREEBSD    "/usr/local/lib/libtcl86.so"
-  #+DARWIN     "/opt/local/libtcl.dylib"
+  #+DARWIN     "/opt/local/lib/libtcl.dylib"
   #+OS-WINDOWS "libtcl.dll")
 
 (defvar *libtcl* nil)
@@ -46,7 +46,7 @@
 (defvar *libtk-location*
   #+LINUX      "/usr/lib/libtk8.6.so"
   #+FREEBSD    "/usr/local/lib/libtk86.so"
-  #+DARWIN     "/opt/local/libtk.dylib"
+  #+DARWIN     "/opt/local/lib/libtk.dylib"
   #+OS-WINDOWS "libtk.dll")
 
 (defvar *libtk* nil)
