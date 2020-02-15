@@ -23,9 +23,9 @@
 ;; Tcl library
 
 (defvar *libtcl-location*
-  #+LINUX      "/usr/lib/libtcl86.so"
-  #+DARWIN     "/opt/local/libtcl86.dylib"
+  #+LINUX      "/usr/lib/libtcl8.6.so"
   #+FREEBSD    "/usr/local/lib/libtcl86.so"
+  #+DARWIN     "/opt/local/libtcl.dylib"
   #+OS-WINDOWS "libtcl.dll")
 
 (defvar *libtcl* nil)
@@ -44,9 +44,9 @@
 ;; Tk library
 
 (defvar *libtk-location*
-  #+LINUX      "/usr/lib/libtk86.so"
-  #+DARWIN     "/opt/local/libtk86.dylib"
+  #+LINUX      "/usr/lib/libtk8.6.so"
   #+FREEBSD    "/usr/local/lib/libtk86.so"
+  #+DARWIN     "/opt/local/libtk.dylib"
   #+OS-WINDOWS "libtk.dll")
 
 (defvar *libtk* nil)
