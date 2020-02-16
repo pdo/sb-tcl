@@ -1,0 +1,20 @@
+
+SB-TCL
+======
+
+An interface between SBCL Common Lisp and Tcl/Tk.  Uses the SBCL FFI
+to load libtcl and libtk shared libraries, allowing Lisp code to
+invoke Tcl commands and for Tcl commands to be implemented by Lisp
+functions, passing data to and from Lisp and Tcl as needed.
+
+Documentation still a work-in-progress, but in the meantime see the
+test/simple-test.lisp source file for a couple of basic examples.
+
+The main purpose of this project is to allow the easy creation of
+Lisp-based applications with a GUI: the GUI is written in Tcl/Tk and
+the application logic in Lisp.  There are no other external
+dependencies.
+
+--
+PDO
+16 February 2020
