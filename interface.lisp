@@ -6,11 +6,18 @@
 ;;;
 (in-package :sb-tcl)
 
-(defparameter +fixnum-is-tcl-long+ t)  ; !!! TODO auto detect !!!
+;;; Assume SBCL and Tcl are either both 64-bit or both 32-bit.
+(defparameter +fixnum-is-tcl-long+
+  #+(AND OS-WINDOWS 64-BIT) nil
+  #-(AND OS-WINDOWS 64-BIT) t)
 
-(defparameter +tcl-long-max+ (- (expt 2 31) 1))  ; !!! TODO auto detect !!!
+(defparameter +tcl-long-max+
+  #+64-BIT (- (expt 2 63) 1)
+  #-64-BIT (- (expt 2 31) 1))
 
-(defparameter +tcl-long-min+ (- (expt 2 31)))  ; !!! TODO auto detect !!!
+(defparameter +tcl-long-min+
+  #+64-BIT (- (expt 2 63))
+  #-64-BIT (- (expt 2 31)))
 
 ;;; Interpreter return codes
 (defparameter +tcl-ok+       0)
@@ -20,47 +27,62 @@
 (defparameter +tcl-continue+ 4)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Tcl library
+;;; Tcl library
 
-(defvar *libtcl-location*
-  #+LINUX      "/usr/lib/libtcl8.6.so"
-  #+FREEBSD    "/usr/local/lib/libtcl86.so"
-  #+DARWIN     "/opt/local/lib/libtcl.dylib"
-  #+OS-WINDOWS "libtcl.dll")
+(defvar *libtcl-name*
+  #+LINUX      '("libtcl.so" "libtcl8.6.so" "libtcl8.5.so")
+  #+FREEBSD    '("libtcl.so" "libtcl86.so" "libtcl85.so")
+  #+DARWIN     "libtcl.dylib"
+  #+OS-WINDOWS '("libtcl.dll" "libtclt.dll")
+  "Name of the libtcl library, or a list of candidate names to be
+  tried in order.")
 
 (defvar *libtcl* nil)
 
-(defun open-libtcl (&optional pathname)
+(defun open-libtcl ()
   (unless *libtcl*
-    (setf *libtcl* (load-shared-object (or pathname *libtcl-location*)))
-    (tcl-find-executable (first sb-ext:*posix-argv*)))
-  *libtcl*)
+    (let ((names (if (listp *libtcl-name*) *libtcl-name* (list *libtcl-name*))))
+      (loop
+         :for name :in names
+         :do (setf *libtcl* (ignore-errors (load-shared-object name :dont-save t)))
+         :until *libtcl*)))
+  (if *libtcl*
+      (tcl-find-executable (first sb-ext:*posix-argv*))
+      (error "Unable to load the libtcl library.")))
 
-(defun close-libtcl (&optional pathname)
-  (unload-shared-object (or pathname *libtcl-location*))
+(defun close-libtcl ()
+  (unload-shared-object *libtcl*)
   (setf *libtcl* nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Tk library
+;;; Tk library
 
-(defvar *libtk-location*
-  #+LINUX      "/usr/lib/libtk8.6.so"
-  #+FREEBSD    "/usr/local/lib/libtk86.so"
-  #+DARWIN     "/opt/local/lib/libtk.dylib"
-  #+OS-WINDOWS "libtk.dll")
+(defvar *libtk-name*
+  #+LINUX      '("libtk.so" "libtk8.6.so" "libtk8.5.so")
+  #+FREEBSD    '("libtk.so" "libtk86.so" "libtk85.so")
+  #+DARWIN     "libtk.dylib"
+  #+OS-WINDOWS '("libtk.dll" "libtkt.dll")
+  "Name of the libtk library, or a list of candidate names to be
+  tried in order.")
 
 (defvar *libtk* nil)
 
-(defun open-libtk (&optional pathname)
+(defun open-libtk ()
   (unless *libtk*
-    (setf *libtk* (load-shared-object (or pathname *libtk-location*)))))
+    (let ((names (if (listp *libtk-name*) *libtk-name* (list *libtk-name*))))
+      (loop
+         :for name :in names
+         :do (setf *libtk* (ignore-errors (load-shared-object name :dont-save t)))
+         :until *libtk*)))
+  (unless *libtk*
+    (error "Unable to load the libtk library.")))
 
-(defun close-libtk (&optional pathname)
-  (unload-shared-object (or pathname *libtk-location*))
+(defun close-libtk ()
+  (unload-shared-object *libtk*)
   (setf *libtk* nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Tcl interpreter
+;;; Tcl interpreter
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun read-tcl-script (filespec)
@@ -118,7 +140,7 @@ tcl-preamble.tcl if NO-PREAMBLE is NIL."
   (tcl-delete-interp interp))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lisp->Tcl conversions
+;;; Lisp->Tcl conversions
 
 (defgeneric to-tcl (obj)
   (:documentation "Convert OBJ to a Tcl foreign object."))
@@ -170,7 +192,7 @@ tcl-preamble.tcl if NO-PREAMBLE is NIL."
     tcl-list))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Tcl->Lisp conversions
+;;; Tcl->Lisp conversions
 
 (defgeneric from-tcl-as (type tcl-obj &rest parameters)
   (:documentation "Convert TCL-OBJ to a normal Lisp object of type TYPE."))
@@ -259,7 +281,7 @@ first element of PARAMETERS (a type descriptor)."
       vec)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Interpreter invocation
+;;; Interpreter invocation
 
 (defgeneric interpret-tcl (object &key &allow-other-keys)
   (:documentation
@@ -281,7 +303,7 @@ of type TCL-RESULT-ERROR."
                :msg (message condition))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Tcl Callouts
+;;; Tcl Callouts
 
 (defun tcl-command-call (&rest objs)
   "Construct a Tcl command line and invoke it.

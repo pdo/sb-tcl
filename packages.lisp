@@ -43,8 +43,8 @@
    #:tcl-command-error #:tcl-command-return
    #:tcl-command-break #:tcl-command-continue
    ;; interface.lisp
-   #:*libtcl-location* #:*libtcl*
-   #:*libtk-location* #:*libtk*
+   #:*libtcl-name* #:*libtcl*
+   #:*libtk-name* #:*libtk*
    #:open-libtcl #:close-libtcl
    #:open-libtk #:close-libtk
    #:read-tcl-script #:*tcl-preamble*
