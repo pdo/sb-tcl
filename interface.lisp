@@ -33,7 +33,7 @@
   #+LINUX      '("libtcl8.6.so" "libtcl.so")
   #+FREEBSD    '("libtcl86.so" "libtcl.so")
   #+DARWIN     '("/opt/local/lib/libtcl8.6.dylib" "libtcl.dylib")
-  #+OS-WINDOWS '("libtcl.dll" "libtclt.dll")
+  #+OS-WINDOWS '("tcl86.dll" "tcl.dll")
   "Name of the libtcl library, or a list of candidate names to be
   tried in order.")
 
@@ -61,7 +61,7 @@
   #+LINUX      '("libtk8.6.so" "libtk.so")
   #+FREEBSD    '("libtk86.so" "libtk.so")
   #+DARWIN     '("/opt/local/lib/libtk8.6.dylib" "libtk.dylib")
-  #+OS-WINDOWS '("libtk.dll" "libtkt.dll")
+  #+OS-WINDOWS '("tk86.dll" "tk.dll")
   "Name of the libtk library, or a list of candidate names to be
   tried in order.")
 
