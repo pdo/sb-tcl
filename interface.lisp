@@ -32,7 +32,7 @@
 (defvar *libtcl-name*
   #+LINUX      '("libtcl8.6.so" "libtcl.so")
   #+FREEBSD    '("libtcl86.so" "libtcl.so")
-  #+DARWIN     '("/opt/local/lib/libtcl8.6.dylib" "libtcl.dylib")
+  #+DARWIN     '("libtcl8.6.dylib" "Tcl.framework/Versions/8.6/Tcl" "/opt/local/lib/libtcl8.6.dylib")
   #+OS-WINDOWS '("tcl86.dll" "tcl.dll")
   "Name of the libtcl library, or a list of candidate names to be
   tried in order.")
@@ -60,7 +60,7 @@
 (defvar *libtk-name*
   #+LINUX      '("libtk8.6.so" "libtk.so")
   #+FREEBSD    '("libtk86.so" "libtk.so")
-  #+DARWIN     '("/opt/local/lib/libtk8.6.dylib" "libtk.dylib")
+  #+DARWIN     '("libtk8.6.dylib" "Tk.framework/Versions/8.6/Tk" "/opt/local/lib/libtk8.6.dylib")
   #+OS-WINDOWS '("tk86.dll" "tk.dll")
   "Name of the libtk library, or a list of candidate names to be
   tried in order.")
