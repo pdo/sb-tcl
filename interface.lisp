@@ -288,7 +288,10 @@ first element of PARAMETERS (a type descriptor)."
    "Evaluate the given Lisp OBJECT using the Tcl interpreter."))
 
 (defmethod interpret-tcl ((script string) &key)
-  (tcl-eval-ex *tcl-interpreter* script -1 0))
+  (let ((stat (tcl-eval-ex *tcl-interpreter* script -1 0)))
+    (unless (eql stat +tcl-ok+)
+      (error 'tcl-interpreter-error
+	     :msg (get-tcl-result-as 'string)))))
 
 (defun get-tcl-result-as (type)
   "Get the desired representation of the Tcl interpreter result.

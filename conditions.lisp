@@ -54,3 +54,13 @@
 
 (define-condition tcl-command-continue (tcl-condition)
   ())
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Tcl interpreter conditions
+
+(define-condition tcl-interpreter-error (tcl-error)
+  ())
+
+(defmethod print-object ((condition tcl-interpreter-error) strm)
+  (format strm "Tcl Interpreter Error: ~A" (message condition)))
+
