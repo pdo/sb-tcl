@@ -86,12 +86,18 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun read-tcl-script (filespec)
+    "Read a Tcl script into a character vector, translating EOLs."
     (with-open-file (strm filespec)
-      (let* ((buffer (make-array (file-length strm)
+      (let* ((buffer (make-array 0
                                  :element-type (stream-element-type strm)
-                                 :fill-pointer t))
-             (position (read-sequence buffer strm)))
-        (setf (fill-pointer buffer) position)
+				 :adjustable t
+                                 :fill-pointer t)))
+	(loop
+	  :for line := (read-line strm nil nil)
+	  :while line
+	  :do (loop :for char :across line
+		    :do (vector-push-extend char buffer))
+	  :do (vector-push-extend #\Newline buffer))
         buffer))))
 
 (defvar *tcl-preamble*
