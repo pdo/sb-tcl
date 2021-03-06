@@ -86,8 +86,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun read-tcl-script (filespec)
-    "Read a Tcl script into a character vector.
- Do backslash EOL substitution where appropriate -- seems to be needed on Windows OS."
+    "Read a Tcl script into a character vector."
     (with-open-file (strm filespec)
       (let* ((buffer (make-array 0
                                  :element-type (stream-element-type strm)
@@ -96,14 +95,12 @@
 	(loop
 	  :for line := (read-line strm nil nil)
 	  :while line
-	  :do (let ((n (loop :for char :across (reverse line)
-			     :while (eql char #\\)
-			     :count 1)))
-		(if (oddp n)  ; do backslash EOL substitution
-		    (setf line (format nil "~A~C" (subseq line 0 (1- (length line))) #\Space))
-		    (setf line (format nil "~A~C" line #\Newline))))
+	  :do (when (and (> (length line) 0)  ; translate CRLF to LF for Windows OS
+			 (eql (aref line (1- (length line))) #\Return))
+		(setf line (subseq line 0 (1- (length line)))))
 	  :do (loop :for char :across line
-		    :do (vector-push-extend char buffer)))
+		    :do (vector-push-extend char buffer))
+	  :do (vector-push-extend #\Newline buffer))
         buffer))))
 
 (defvar *tcl-preamble*
