@@ -103,8 +103,12 @@
 	  :do (vector-push-extend #\Newline buffer))
         buffer))))
 
+(defvar *tcl-init*
+  #.(read-tcl-script (merge-pathnames "init.tcl" *compile-file-truename*))
+  "Tcl initialisation script.")
+
 (defvar *tcl-preamble*
-  #.(read-tcl-script (merge-pathnames "tcl-preamble.tcl" *compile-file-truename*))
+  #.(read-tcl-script (merge-pathnames "preamble.tcl" *compile-file-truename*))
   "Tcl script to execute when interpreter is started.")
 
 (defvar *tcl-interpreter* nil
@@ -113,11 +117,13 @@
 (defun start-tcl-interpreter (&key with-tk no-bind no-preamble)
   "Return a newly created Tcl interpreter.
 Also bind it to *TCL-INTERPRETER* if NO-BIND is NIL, and source
-tcl-preamble.tcl if NO-PREAMBLE is NIL."
+preamble.tcl if NO-PREAMBLE is NIL."
   (unless *libtcl*
     (open-libtcl))
   (let ((interp (tcl-create-interp)))
-    (initialize-tcl interp)
+    (tcl-eval-ex interp "set tcl_library {}" -1 0)
+    ;;(initialize-tcl interp)
+    (tcl-eval-ex interp *tcl-init* -1 0)
     (when with-tk
       (unless *libtk*
         (open-libtk))
@@ -125,7 +131,7 @@ tcl-preamble.tcl if NO-PREAMBLE is NIL."
     (unless no-bind
       (setf *tcl-interpreter* interp))
     (unless no-preamble
-      (interpret-tcl *tcl-preamble*))
+      (tcl-eval-ex interp *tcl-preamble* -1 0))
     interp))
 
 (defun initialize-tcl (&optional (interp *tcl-interpreter*))
