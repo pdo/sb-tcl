@@ -1,5 +1,5 @@
 ;;;
-;;; Copyright (c) 2016 - 2020 Paul Onions
+;;; Copyright (c) 2016 - 2022 Paul Onions
 ;;; Licence: MIT, see LICENCE file for details
 ;;;
 ;;; Package definition for the SB-TCL system.
@@ -35,7 +35,7 @@
   (:use :common-lisp :sb-tcl-alien)
   (:import-from :sb-alien
    #:load-shared-object #:unload-shared-object
-   #:with-alien #:define-alien-callback
+   #:with-alien #:define-alien-callable #:alien-callable-function
    #:int #:void #:deref #:addr)
   (:export
    ;; conditions.lisp

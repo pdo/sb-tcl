@@ -367,18 +367,23 @@ does not complete with a +TCL-OK+ return code."
 (defmacro define-tcl-command (name lambda-list &body body)
   "Define a Lisp function callable from Tcl.
 
-Wrap BODY in a function based on NAME and LAMBDA-LIST, where
-LAMBDA-LIST is a list of (NAME TYPE) pairs, so that BODY is evaluated
-in a context where each NAME is bound to the result of applying
-FROM-TCL-AS to TYPE and the tcl object supplied by Tcl.
+Create a function called NAME with arguments according to LAMBDA-LIST
+and behaviour given by BODY.  This function will be made callable from
+Tcl using SBCL's ALIEN-CALLABLE-FUNCTION facility.
+
+LAMBDA-LIST should be a list of (ARG-NAME ARG-TYPE) pairs, such that
+BODY is evaluated in a context where each ARG-NAME is bound to the
+result of applying FROM-TCL-AS to ARG-TYPE and the tcl object supplied
+by Tcl.
 
 The primary result of evaluating BODY will be returned to Tcl via the
 TO-TCL generic function, except if it is NIL, in which case it is
 assumed that the command return value has been set by other means
 inside BODY and is left untouched.
 
-An optional second result should, if supplied, be an interpreter exit
-status code.  If it is omitted, or nil, then +TCL-OK+ is assumed."
+An optional second result should, if supplied by BODY, be an
+interpreter exit status code.  If it is omitted, or nil, then +TCL-OK+
+is assumed."
   (let ((arity (length lambda-list))
         (args-descrip (format nil "~{~{<~A/~A>~}~^ ~}" lambda-list))
         (!client-data (gensym "CDAT"))
@@ -387,7 +392,7 @@ status code.  If it is omitted, or nil, then +TCL-OK+ is assumed."
         (!objv (gensym "OBJV"))
         (!rslt (gensym "RSLT"))
         (!stat (gensym "STAT")))
-    `(define-alien-callback ,name int
+    `(define-alien-callable ,name int
        ((,!client-data tcl-data-ptr)
         (,!interp tcl-interp-ptr)
         (,!objc int)
@@ -408,21 +413,21 @@ status code.  If it is omitted, or nil, then +TCL-OK+ is assumed."
            (%set-obj-result *tcl-interpreter* (to-tcl ,!rslt)))
          (or ,!stat +tcl-ok+)))))
 
-(define-alien-callback tcl-delete-command void ((client-data tcl-data-ptr))
+(define-alien-callable tcl-delete-command void ((client-data tcl-data-ptr))
   (declare (ignore client-data))
   nil)
 
 (defun register-tcl-command (command &optional name)
   "Register COMMAND with *TCL-INTERPRETER*.
 
-The COMMAND argument should be a symbol that has previously been bound
-to a command callback function by a DEFINE-TCL-COMMAND form.  The
+The COMMAND argument should be a symbol that has previously been used
+to name an alien callable function in a DEFINE-TCL-COMMAND form.  The
 callback function will become accessible in the Tcl interpreter as a
 command called NAME, defaulting to a downcased version of the Lisp
 symbol name if omitted."
   (let ((str (or name (string-downcase (string command)))))
     (tcl-create-obj-command *tcl-interpreter*
                             str
-                            (symbol-value command)
+                            (alien-callable-function command)
                             nil
-                            tcl-delete-command)))
+                            (alien-callable-function 'tcl-delete-command))))
