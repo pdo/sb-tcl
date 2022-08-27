@@ -1,5 +1,5 @@
 ;;;
-;;; Copyright (c) 2016 - 2020 Paul Onions
+;;; Copyright (c) 2016 - 2022 Paul Onions
 ;;; Licence: MIT, see LICENCE file for details
 ;;;
 ;;; SBCL<->Tcl interface.
@@ -103,10 +103,6 @@
 	  :do (vector-push-extend #\Newline buffer))
         buffer))))
 
-(defvar *tcl-init*
-  #.(read-tcl-script (merge-pathnames "init.tcl" *compile-file-truename*))
-  "Tcl initialisation script.")
-
 (defvar *tcl-preamble*
   #.(read-tcl-script (merge-pathnames "preamble.tcl" *compile-file-truename*))
   "Tcl script to execute when interpreter is started.")
@@ -121,9 +117,7 @@ preamble.tcl if NO-PREAMBLE is NIL."
   (unless *libtcl*
     (open-libtcl))
   (let ((interp (tcl-create-interp)))
-    (tcl-eval-ex interp "set tcl_library {}" -1 0)
-    ;;(initialize-tcl interp)
-    (tcl-eval-ex interp *tcl-init* -1 0)
+    (initialize-tcl interp)
     (when with-tk
       (unless *libtk*
         (open-libtk))
