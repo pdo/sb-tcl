@@ -1,5 +1,5 @@
 ;;;
-;;; Copyright (c) 2016 - 2018 Paul Onions
+;;; Copyright (c) 2016 - 2022 Paul Onions
 ;;; Licence: MIT, see LICENCE file for details
 ;;;
 ;;; ASDF system definition for the SB-TCL test system.
@@ -12,6 +12,6 @@
   :licence "MIT"
   :description "SB-TCL-TEST: test system for SB-TCL."
   :depends-on (:sb-tcl)
-  :components ((:file "packages")
-               (:file "simple-test"))
+  :components ((:file "simple-test")
+               (:file "package"))
   :serial t)

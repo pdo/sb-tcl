@@ -1,5 +1,5 @@
 ;;;
-;;; Copyright (c) 2016 - 2020 Paul Onions
+;;; Copyright (c) 2016 - 2022 Paul Onions
 ;;; Licence: MIT, see LICENCE file for details
 ;;;
 ;;; ASDF system definition for the SB-TCL system.
@@ -12,8 +12,8 @@
   :licence "MIT"
   :description "SB-TCL: a low-level connection from SBCL to Tcl."
   :depends-on ()
-  :components ((:file "packages")
-               (:file "conditions")
+  :components ((:file "conditions")
                (:file "aliens")
-               (:file "interface"))
+               (:file "interface")
+               (:file "package"))
   :serial t)

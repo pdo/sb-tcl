@@ -4,7 +4,27 @@
 ;;;
 ;;; SBCL<->Tcl interface.
 ;;;
-(in-package :sb-tcl)
+(defpackage :sb-tcl.interface
+  (:use :common-lisp :sb-tcl.conditions :sb-tcl.aliens)
+  (:import-from :sb-alien
+   :load-shared-object :unload-shared-object
+   :define-alien-callable :alien-callable-function
+   :with-alien :addr :deref :void :int)
+  (:export
+   :*libtcl-name* :*libtcl*
+   :*libtk-name* :*libtk*
+   :open-libtcl :close-libtcl
+   :open-libtk :close-libtk
+   :read-tcl-script :*tcl-preamble*
+   :tcl-interpreter :*tcl-interpreter*
+   :start-tcl-interpreter :stop-tcl-interpreter
+   :initialize-tcl :initialize-tk :enter-tk-main-loop
+   :to-tcl :from-tcl-as
+   :interpret-tcl :get-tcl-result-as
+   :tcl-command-call :define-tcl-callout
+   :define-tcl-command :register-tcl-command))
+
+(in-package :sb-tcl.interface)
 
 ;;; Assume SBCL and Tcl are either both 64-bit or both 32-bit.
 (defparameter +fixnum-is-tcl-long+

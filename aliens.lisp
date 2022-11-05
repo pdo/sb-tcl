@@ -1,10 +1,34 @@
 ;;;
-;;; Copyright (c) 2016 - 2020 Paul Onions
+;;; Copyright (c) 2016 - 2022 Paul Onions
 ;;; Licence: MIT, see LICENCE file for details
 ;;;
 ;;; SBCL foreign definitions
 ;;;
-(in-package :sb-tcl-alien)
+(defpackage :sb-tcl.aliens
+  (:use :common-lisp)
+  (:import-from :sb-alien
+   :define-alien-type :define-alien-routine
+   :struct :void :int :long :double :c-string)
+  (:export
+   :tcl-interp-ptr :tcl-obj-ptr
+   :tcl-command-ptr :tcl-data-ptr
+   :tcl-find-executable
+   :tcl-create-interp :tcl-delete-interp
+   :tcl-init :tcl-eval-ex :tcl-eval-obj-ex
+   :tcl-get-string-result :tcl-get-obj-result
+   :tcl-new-obj :tcl-new-string-obj
+   :tcl-new-long-obj :tcl-new-double-obj
+   :tcl-new-list-obj
+   :tcl-list-obj-append-element
+   :tcl-list-obj-index :tcl-list-obj-length
+   :tcl-get-string-from-obj :tcl-get-long-from-obj
+   :tcl-get-double-from-obj
+   :tcl-db-incr-ref-count :tcl-db-decr-ref-count
+   :tcl-create-obj-command :tcl-wrong-num-args
+   :tcl-set-obj-result
+   :tk-init :tk-main-loop))
+
+(in-package :sb-tcl.aliens)
 
 ;;; Opaque foreign structures
 (define-alien-type tcl-interp-ptr  (* (struct nil)))
