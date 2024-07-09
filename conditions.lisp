@@ -4,7 +4,7 @@
 ;;;
 ;;; Conditions signaled by SB-TCL.
 ;;;
-(defpackage :sb-tcl.conditions
+(defpackage :sb-tcl/conditions
   (:use :common-lisp)
   (:export
    :tcl-condition :message :arguments
@@ -13,7 +13,7 @@
    :tcl-command-break :tcl-command-continue
    :tcl-interpreter-error))
 
-(in-package :sb-tcl.conditions)
+(in-package :sb-tcl/conditions)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Base conditions

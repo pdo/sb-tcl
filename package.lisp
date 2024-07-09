@@ -5,13 +5,13 @@
 ;;; Package definition for the SB-TCL system.
 ;;;
 (defpackage :sb-tcl
-  (:use :common-lisp :sb-tcl.conditions :sb-tcl.interface)
+  (:use :common-lisp :sb-tcl/conditions :sb-tcl/interface)
   (:export
-   ;; sb-tcl.conditions
+   ;; sb-tcl/conditions
    :tcl-condition :tcl-error :tcl-result-error :tcl-conversion-error
    :tcl-command-error :tcl-command-return :tcl-command-break :tcl-command-continue
    :tcl-interpreter-error
-   ;; sb-tcl.interface
+   ;; sb-tcl/interface
    :*libtcl-name* :*libtcl*
    :*libtk-name* :*libtk*
    :open-libtcl :close-libtcl

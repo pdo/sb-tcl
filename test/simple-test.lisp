@@ -4,12 +4,12 @@
 ;;;
 ;;; Some simple tests/examples of SB-TCL usage.
 ;;;
-(defpackage :sb-tcl-test.simple-test
+(defpackage :sb-tcl-test/simple-test
   (:use :common-lisp :sb-tcl)
   (:export
    :tcl-test :tk-test))
 
-(in-package :sb-tcl-test.simple-test)
+(in-package :sb-tcl-test/simple-test)
 
 (define-tcl-callout start-repl-server (&optional (port 0)) integer
   (list "::sb-tcl::start_repl_server" port))

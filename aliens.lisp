@@ -4,7 +4,7 @@
 ;;;
 ;;; SBCL foreign definitions
 ;;;
-(defpackage :sb-tcl.aliens
+(defpackage :sb-tcl/aliens
   (:use :common-lisp)
   (:import-from :sb-alien
    :define-alien-type :define-alien-routine
@@ -28,7 +28,7 @@
    :tcl-set-obj-result
    :tk-init :tk-main-loop))
 
-(in-package :sb-tcl.aliens)
+(in-package :sb-tcl/aliens)
 
 ;;; Opaque foreign structures
 (define-alien-type tcl-interp-ptr  (* t))

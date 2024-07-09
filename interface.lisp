@@ -4,8 +4,8 @@
 ;;;
 ;;; SBCL<->Tcl interface.
 ;;;
-(defpackage :sb-tcl.interface
-  (:use :common-lisp :sb-tcl.conditions :sb-tcl.aliens)
+(defpackage :sb-tcl/interface
+  (:use :common-lisp :sb-tcl/conditions :sb-tcl/aliens)
   (:import-from :sb-alien
    :load-shared-object :unload-shared-object
    :define-alien-callable :alien-callable-function
@@ -24,7 +24,7 @@
    :tcl-command-call :define-tcl-callout
    :define-tcl-command :register-tcl-command))
 
-(in-package :sb-tcl.interface)
+(in-package :sb-tcl/interface)
 
 ;;; Assume SBCL and Tcl are either both 64-bit or both 32-bit.
 (defparameter +fixnum-is-tcl-long+
