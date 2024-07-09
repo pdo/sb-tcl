@@ -31,10 +31,10 @@
 (in-package :sb-tcl.aliens)
 
 ;;; Opaque foreign structures
-(define-alien-type tcl-interp-ptr  (* (struct nil)))
-(define-alien-type tcl-obj-ptr     (* (struct nil)))
-(define-alien-type tcl-command-ptr (* (struct nil)))
-(define-alien-type tcl-data-ptr    (* (struct nil)))
+(define-alien-type tcl-interp-ptr  (* t))
+(define-alien-type tcl-obj-ptr     (* t))
+(define-alien-type tcl-command-ptr (* t))
+(define-alien-type tcl-data-ptr    (* t))
 
 ;;; Tcl library routines
 (define-alien-routine ("Tcl_FindExecutable" tcl-find-executable) void
@@ -72,13 +72,13 @@
   (double-value double))
 
 (define-alien-routine ("Tcl_NewListObj" tcl-new-list-obj) tcl-obj-ptr
-  (objc int) (objv (* (array tcl-obj-ptr nil))))
+  (objc int) (objv (* tcl-obj-ptr)))
 
 (define-alien-routine ("Tcl_ListObjAppendElement" tcl-list-obj-append-element) int
   (interp tcl-interp-ptr) (list tcl-obj-ptr) (obj tcl-obj-ptr))
 
 ;;(define-alien-routine ("Tcl_ListObjGetElements" tcl-list-obj-get-elements) int
-;;  (interp tcl-interp-ptr) (list tcl-obj-ptr) (objc-ptr int :out) (objv-ptr (* (array tcl-obj-ptr nil))))
+;;  (interp tcl-interp-ptr) (list tcl-obj-ptr) (objc-ptr int :out) (objv-ptr (* tcl-obj-ptr)))
 
 (define-alien-routine ("Tcl_ListObjIndex" tcl-list-obj-index) int
   (interp tcl-interp-ptr) (list tcl-obj-ptr) (index int) (elem (* tcl-obj-ptr)))
@@ -104,12 +104,12 @@
 (define-alien-routine ("Tcl_CreateObjCommand" tcl-create-obj-command) tcl-command-ptr
   (interp tcl-interp-ptr)
   (cmd-name c-string)
-  (proc (function int tcl-data-ptr tcl-interp-ptr int (* (array tcl-obj-ptr nil))))
+  (proc (function int tcl-data-ptr tcl-interp-ptr int (* tcl-obj-ptr)))
   (client-data tcl-data-ptr)
   (delete-proc (function void tcl-data-ptr)))
 
 (define-alien-routine ("Tcl_WrongNumArgs" tcl-wrong-num-args) void
-  (interp tcl-interp-ptr) (objc int) (objv (* (array tcl-obj-ptr nil))) (message c-string))
+  (interp tcl-interp-ptr) (objc int) (objv (* tcl-obj-ptr)) (message c-string))
 
 (define-alien-routine ("Tcl_SetObjResult" tcl-set-obj-result) void
   (interp tcl-interp-ptr) (obj tcl-obj-ptr))

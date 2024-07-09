@@ -417,7 +417,7 @@ is assumed."
        ((,!client-data tcl-data-ptr)
         (,!interp tcl-interp-ptr)
         (,!objc int)
-        (,!objv (* (array tcl-obj-ptr nil))))
+        (,!objv (* tcl-obj-ptr)))
        (declare (ignore ,!client-data))
        (multiple-value-bind (,!rslt ,!stat)
            (cond
@@ -428,7 +428,7 @@ is assumed."
               (let (,@(loop
                          :for (name type) :in lambda-list
                          :for idx :from 1
-                         :collect `(,name (from-tcl-as ',type (deref (deref ,!objv) ,idx)))))
+                         :collect `(,name (from-tcl-as ',type (deref ,!objv ,idx)))))
                 ,@body)))
          (when ,!rslt
            (%set-obj-result *tcl-interpreter* (to-tcl ,!rslt)))
